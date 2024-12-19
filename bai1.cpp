@@ -1,15 +1,12 @@
 #include <iostream>
+
 using namespace std;
 
-struct NODE {
-    int chapter;     // Thứ tự chương
-    int page;        // Số trang
-    int section;     // Số phần
-    int subsection;  // Số tiểu mục
-    NODE* left; 
-    NODE* right;
+struct Node {
+    int chapter, page, section, subsection;
+    Node* left, *right;
 
-    NODE(int c, int p, int s, int subs) {
+    Node(int c, int p, int s, int subs) {
         chapter = c;
         page = p;
         section = s;
@@ -18,147 +15,114 @@ struct NODE {
     }
 };
 
-// Kiểm tra cây rỗng
-bool IS_EMPTY(NODE* root) {
-    return root == nullptr;
-}
-
-// Hàm tạo node mới
-NODE* MAKE_NODE(int c, int p, int s, int subs) {
-    return new NODE(c, p, s, subs);
-}
-
-// Hàm thêm node vào cây
-NODE* INSERT(NODE* root, int c, int p, int s, int subs) {
-    if (IS_EMPTY(root)) {
-        return MAKE_NODE(c, p, s, subs);
+Node* insert(Node* root, int c, int p, int s, int subs) {
+    if (!root) {
+        return new Node(c, p, s, subs);
     }
+
     if (c < root->chapter) {
-        root->left = INSERT(root->left, c, p, s, subs);
-    } else {
-        root->right = INSERT(root->right, c, p, s, subs);
+        root->left = insert(root->left, c, p, s, subs);
+    } else if (c > root->chapter) {
+        root->right = insert(root->right, c, p, s, subs);
     }
+
     return root;
 }
 
-// Hàm đếm số chương
-int NUM_OF_CHAP(NODE* root) {
-    if (IS_EMPTY(root)) {
+int countChapters(Node* root) {
+    if (!root) {
         return 0;
     }
-    return 1 + NUM_OF_CHAP(root->left) + NUM_OF_CHAP(root->right);
+    return 1 + countChapters(root->left) + countChapters(root->right);
 }
 
-// Hàm tìm chương dài nhất (dựa vào số trang)
-NODE* MAX_LEN(NODE* root, int& maxPages) {
-    if (IS_EMPTY(root)) return nullptr;
-
-    NODE* longest = root;
-    int leftMaxPages = 0, rightMaxPages = 0;
-
-    NODE* leftLongest = MAX_LEN(root->left, leftMaxPages);
-    NODE* rightLongest = MAX_LEN(root->right, rightMaxPages);
-
-    if (leftLongest && leftMaxPages > maxPages) {
-        maxPages = leftMaxPages;
-        longest = leftLongest;
+Node* findMaxChapter(Node* root) {
+    if (!root) {
+        return nullptr;
     }
-    if (rightLongest && rightMaxPages > maxPages) {
-        maxPages = rightMaxPages;
-        longest = rightLongest;
+
+    Node* maxNode = root;
+    Node* current = root->right;
+
+    while (current) {
+        maxNode = current;
+        current = current->right;
     }
-    if (root->page > maxPages) {
-        maxPages = root->page;
-        longest = root;
-    }
-    return longest;
+
+    return maxNode;
 }
 
-// Hàm tìm kiếm node
-NODE* FIND(NODE* root, int chapter) {
-    if (IS_EMPTY(root)) return nullptr;
-    if (chapter == root->chapter) return root;
-    if (chapter < root->chapter) return FIND(root->left, chapter);
-    return FIND(root->right, chapter);
-}
-
-// Hàm xóa một node trong cây
-NODE* DELETE_NODE(NODE* root, int chapter) {
-    if (IS_EMPTY(root)) return nullptr;
+Node* deleteNode(Node* root, int chapter) {
+    if (!root) {
+        return root;
+    }
 
     if (chapter < root->chapter) {
-        root->left = DELETE_NODE(root->left, chapter);
+        root->left = deleteNode(root->left, chapter);
     } else if (chapter > root->chapter) {
-        root->right = DELETE_NODE(root->right, chapter);
+        root->right = deleteNode(root->right, chapter);
     } else {
-        // Trường hợp tìm thấy node cần xóa
-        if (IS_EMPTY(root->left)) {
-            NODE* temp = root->right;
+        // Node with one or no child
+        if (!root->left) {
+            Node* temp = root->right;
             delete root;
             return temp;
-        }
-        if (IS_EMPTY(root->right)) {
-            NODE* temp = root->left;
+        } else if (!root->right) {
+            Node* temp = root->left;
             delete root;
             return temp;
         }
 
-        // Node có cả hai con: tìm giá trị nhỏ nhất ở cây con phải
-        NODE* temp = root->right;
-        while (temp->left) temp = temp->left;
-
+        // Node with two children: Get the inorder successor (smallest
+        // in the right subtree)
+        Node* temp = findMaxChapter(root->left);
         root->chapter = temp->chapter;
         root->page = temp->page;
         root->section = temp->section;
         root->subsection = temp->subsection;
-
-        root->right = DELETE_NODE(root->right, temp->chapter);
+        root->left = deleteNode(root->left, temp->chapter);
     }
     return root;
 }
 
-// Duyệt cây theo thứ tự trước (tiền tố)
-void PREFIX(NODE* root) {
-    if (IS_EMPTY(root)) return;
-    cout << "Chapter: " << root->chapter 
-         << ", Pages: " << root->page 
-         << ", Sections: " << root->section 
-         << ", Subsections: " << root->subsection << endl;
-    PREFIX(root->left);
-    PREFIX(root->right);
+void preorderTraversal(Node* root) {
+    if (!root) {
+        return;
+    }
+    cout << "Chapter: " << root->chapter << endl;
+    cout << "Page: " << root->page << " Section: " << root->section << " Subsection: " << root->subsection << endl;
+    preorderTraversal(root->left);
+    preorderTraversal(root->right);
 }
 
 int main() {
-    NODE* root = nullptr;
+    Node* root = nullptr;
 
-    // Thêm dữ liệu
-    root = INSERT(root, 1, 100, 5, 10);
-    root = INSERT(root, 2, 200, 8, 15);
-    root = INSERT(root, 3, 150, 6, 12);
+    int chapter, page, section, subsection;
 
-    // Hiển thị cấu trúc cây
-    cout << "Tree structure (Prefix traversal):" << endl;
-    PREFIX(root);
+    for (int i = 0; i < 2; i++) {
+        cout << "Chapter: ";
+        cin >> chapter;
+        cout << "Page: ";
+        cin >> page;
+        cout << "Section: ";
+        cin >> section;
+        cout << "Subsection: ";
+        cin >> subsection;
 
-    // Đếm số chương
-    cout << "\nNumber of chapters: " << NUM_OF_CHAP(root) << endl;
-
-    // Tìm chương dài nhất
-    int maxPages = 0;
-    NODE* longest = MAX_LEN(root, maxPages);
-    if (longest) {
-        cout << "Longest chapter: Chapter " << longest->chapter 
-             << " with " << maxPages << " pages." << endl;
+        root = insert(root, chapter, page, section, subsection);
     }
 
-    // Tìm và xóa một chương
-    int chapterToDelete = 2;
-    cout << "\nDeleting chapter " << chapterToDelete << "..." << endl;
-    root = DELETE_NODE(root, chapterToDelete);
+    preorderTraversal(root);
 
-    // Hiển thị lại cây
-    cout << "Tree structure after deletion:" << endl;
-    PREFIX(root);
+    cout << "Number of chapters: " << countChapters(root) << endl;
+    Node* maxChapterNode = findMaxChapter(root);
+    cout << "Longest chapter: " << maxChapterNode->chapter << endl;
+
+    // Delete a chapter (e.g., chapter 3)
+    root = deleteNode(root, 3);
+
+    preorderTraversal(root);
 
     return 0;
 }
