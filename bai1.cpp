@@ -9,8 +9,13 @@ struct NODE {
     NODE* left; 
     NODE* right;
 
-    NODE(int c, int p, int s, int subs)
-        : chapter(c), page(p), section(s), subsection(subs), left(nullptr), right(nullptr) {}
+    NODE(int c, int p, int s, int subs) {
+        chapter = c;
+        page = p;
+        section = s;
+        subsection = subs;
+        left = right = nullptr;
+    }
 };
 
 // Kiểm tra cây rỗng
@@ -28,7 +33,7 @@ NODE* INSERT(NODE* root, int c, int p, int s, int subs) {
     if (IS_EMPTY(root)) {
         return MAKE_NODE(c, p, s, subs);
     }
-    if (c <= root->chapter) {
+    if (c < root->chapter) {
         root->left = INSERT(root->left, c, p, s, subs);
     } else {
         root->right = INSERT(root->right, c, p, s, subs);
@@ -38,7 +43,9 @@ NODE* INSERT(NODE* root, int c, int p, int s, int subs) {
 
 // Hàm đếm số chương
 int NUM_OF_CHAP(NODE* root) {
-    if (IS_EMPTY(root)) return 0;
+    if (IS_EMPTY(root)) {
+        return 0;
+    }
     return 1 + NUM_OF_CHAP(root->left) + NUM_OF_CHAP(root->right);
 }
 
